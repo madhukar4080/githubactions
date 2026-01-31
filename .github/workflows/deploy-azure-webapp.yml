@@ -6,13 +6,10 @@ on:
       - main
   workflow_dispatch:
 
-env:
-  AZURE_WEBAPP_NAME: sample-dotnet-azure-app   # CHANGE THIS
-  DOTNET_VERSION: '8.0.x'
 
 jobs:
   build-and-deploy:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
     - name: Checkout source code
@@ -21,7 +18,7 @@ jobs:
     - name: Setup .NET SDK
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: ${{ env.DOTNET_VERSION }}
+        dotnet-version: ${{ vars.DOTNET_VERSION }}
 
     - name: Restore dependencies
       run: dotnet restore
@@ -32,9 +29,17 @@ jobs:
     - name: Publish application
       run: dotnet publish -c Release -o ${{ github.workspace }}/publish
 
+    - name: Azure Login
+      uses: azure/login@v2
+      with:
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}          
+
+
     - name: Deploy to Azure Web App
       uses: azure/webapps-deploy@v3
       with:
-        app-name: ${{ env.AZURE_WEBAPP_NAME }}
-        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-        package: ${{ github.workspace }}/publish
+         app-name: ${{ vars.AZURE_WEBAPP_NAME }}
+         package: publish
